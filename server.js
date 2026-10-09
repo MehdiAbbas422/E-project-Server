@@ -1,4 +1,4 @@
-require('dotenv').config()
+require('dotenv').config({ path: require('path').resolve(__dirname, '.env') })
 require('express-async-errors') // forwards async route errors to the error handler
 const express = require('express')
 const cors = require('cors')
