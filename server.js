@@ -36,6 +36,10 @@ app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }))
 // Larger JSON body limit so image metadata can travel with form payloads
 app.use(express.json({ limit: '2mb' }))
 
+// Purpose: Simple health probe used by the client to confirm the API is up.
+// Defined BEFORE the DB guard so it answers even if MongoDB is misconfigured.
+app.get('/api/health', (req, res) => res.json({ ok: true, time: new Date().toISOString() }))
+
 // Purpose: Guarantees MongoDB is connected before any API route runs. On a
 // serverless cold start the first request waits for the (cached) connection;
 // once connected this resolves instantly and adds no measurable overhead.
@@ -90,9 +94,6 @@ app.use('/api/admin', require('./routes/admin'))
 // Purpose: Root health probe so platform health checks (Koyeb, Render, etc.)
 // get a fast 200 response without hitting a real route.
 app.get('/', (req, res) => res.json({ ok: true, service: 'EventSphere API' }))
-
-// Purpose: Simple health probe used by the client to confirm the API is up.
-app.get('/api/health', (req, res) => res.json({ ok: true, time: new Date().toISOString() }))
 
 const server = http.createServer(app)
 
