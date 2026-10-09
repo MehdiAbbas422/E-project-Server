@@ -12,6 +12,13 @@ const connectDB = require('./config/db')
 
 const app = express()
 
+const allowedOrigins = [
+  'https://e-project-cliect.vercel.app',
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  process.env.CLIENT_URL?.replace(/\/+$/, '')
+].filter((origin) => origin && origin !== '*')
+
 // Vercel runs the API as a serverless function, where there is no long-lived
 // process: no Socket.IO server and no local uploads folder.
 const isServerless = Boolean(process.env.VERCEL)
@@ -29,7 +36,7 @@ if (!process.env.JWT_SECRET) {
   console.warn('⚠️  JWT_SECRET is not set — copy server/.env.example to server/.env and set it.')
 }
 
-app.use(cors())
+app.use(cors({ origin: allowedOrigins }))
 // Security headers. crossOriginResourcePolicy is relaxed so uploaded images
 // can still be embedded by the client.
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }))
@@ -109,7 +116,7 @@ let io = null
 
 if (!isServerless) {
   io = new Server(server, {
-    cors: { origin: process.env.CLIENT_URL || '*' }
+    cors: { origin: allowedOrigins }
   })
 
   // Purpose: Authenticates each socket connection with the same JWT used by

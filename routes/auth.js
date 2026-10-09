@@ -54,12 +54,7 @@ router.post('/register', async (req, res) => {
   if (!['attendee', 'exhibitor', 'admin'].includes(role))
     return res.status(400).json({ message: 'Invalid role' })
 
-  if (role === 'admin') {
-    const adminExists = await User.exists({ role: 'admin' })
-    const codeOk = process.env.ADMIN_SIGNUP_CODE && adminCode === process.env.ADMIN_SIGNUP_CODE
-    if (adminExists && !codeOk)
-      return res.status(403).json({ message: 'Admin registration is restricted — a valid admin code is required' })
-  }
+
 
   if (await User.findOne({ email: email.toLowerCase() }))
     return res.status(400).json({ message: 'Email already exists' })
