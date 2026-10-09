@@ -8,7 +8,7 @@ const expoSchema = new mongoose.Schema({
   // Map pin coordinates chosen on the map (used by the embedded Leaflet map)
   lat: { type: Number, default: null },
   lng: { type: Number, default: null },
-  // Uploaded cover image (JPG/PNG) served from /uploads/...
+  // Uploaded cover image (JPG/PNG) stored in MongoDB and served from /api/images/...
   image: { type: String, default: '' },
   description: { type: String, default: '' },
   theme: { type: String, default: '' },

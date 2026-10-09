@@ -1,24 +1,23 @@
-const fs = require('fs')
-const path = require('path')
-
-// Folder where multer stores uploaded JPG/PNG files
-const UPLOAD_DIR = path.join(__dirname, '..', 'uploads')
+const { removeImage } = require('./images')
 
 /**
- * Deletes a previously uploaded file given its public URL (e.g.
- * "/uploads/image-123.jpg"). Only files inside the uploads folder are touched,
- * and only local uploads — external URLs (Unsplash etc.) are ignored.
+ * Deletes a previously uploaded image given its public URL.
+ *
+ * Uploads now live in MongoDB GridFS and are referenced as
+ * "/api/images/<id>", so only those URLs are touched. External images
+ * (Unsplash etc.) and empty values are ignored.
  */
 const removeUpload = (url) => {
   try {
     if (!url || typeof url !== 'string') return
-    if (!url.startsWith('/uploads/')) return
-    const name = path.basename(url) // prevents path traversal
-    const filePath = path.join(UPLOAD_DIR, name)
-    if (fs.existsSync(filePath)) fs.unlinkSync(filePath)
+    const marker = '/api/images/'
+    const at = url.indexOf(marker)
+    if (at === -1) return
+    const id = url.slice(at + marker.length).split('?')[0].split('#')[0]
+    if (id) removeImage(id).catch(() => {})
   } catch (err) {
     console.error('Could not remove upload:', err.message)
   }
 }
 
-module.exports = { removeUpload, UPLOAD_DIR }
+module.exports = { removeUpload }

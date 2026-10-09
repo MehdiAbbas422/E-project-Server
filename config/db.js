@@ -1,13 +1,28 @@
 const mongoose = require('mongoose')
 
-const connectDB = async () => {
-  try {
-    await mongoose.connect(process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/eventsphere')
-    console.log('MongoDB connected')
-  } catch (err) {
-    console.error('MongoDB error:', err.message)
-    process.exit(1)
+let connectionPromise = null
+
+/**
+ * Connects to MongoDB exactly once and caches the promise.
+ * On a serverless host (Vercel) several cold-start requests can arrive at the
+ * same time — all of them await the same connection instead of opening many.
+ */
+const connectDB = () => {
+  if (mongoose.connection.readyState === 1) return Promise.resolve(mongoose)
+  if (!connectionPromise) {
+    connectionPromise = mongoose
+      .connect(process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/eventsphere')
+      .then(() => {
+        console.log('MongoDB connected')
+        return mongoose
+      })
+      .catch((err) => {
+        console.error('MongoDB error:', err.message)
+        connectionPromise = null // allow a retry on the next request
+        throw err
+      })
   }
+  return connectionPromise
 }
 
 module.exports = connectDB

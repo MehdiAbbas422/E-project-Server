@@ -46,7 +46,7 @@ const api = async (method, path, { token, body } = {}) => {
 
 const main = async () => {
   console.log('Starting in-memory MongoDB…')
-  const mongod = await MongoMemoryServer.create()
+  const mongod = await MongoMemoryServer.create({ instance: { launchTimeout: 60000 } })
   process.env.MONGO_URI = mongod.getUri('eventsphere')
 
   require('../server') // boots the real server on process.env.PORT
@@ -163,6 +163,33 @@ const main = async () => {
   check('analytics per-session breakdown', r.status === 200 && Array.isArray(r.data.bookingsBySession) && r.data.bookingsBySession[0]?.title === 'Keynote')
   r = await api('GET', `/api/expos/${expoId}/bookings`, { token: adminTok })
   check('expo bookings report endpoint', r.status === 200 && r.data.length === 1)
+
+  console.log('\nReal-time feed & image uploads')
+  r = await api('GET', '/api/events')
+  check('change feed responds', r.status === 200 && Array.isArray(r.data.changes) && typeof r.data.now === 'string')
+
+  // Upload a tiny 1x1 PNG and confirm it is stored in GridFS and served back —
+  // this is the path that replaces local-disk uploads on serverless hosts.
+  const pngBytes = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+    'base64'
+  )
+  const form = new FormData()
+  form.append('image', new Blob([pngBytes], { type: 'image/png' }), 'tiny.png')
+  const upRes = await fetch(`${BASE}/api/upload`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${a1Tok}` },
+    body: form
+  })
+  let upData = null
+  try { upData = await upRes.json() } catch { /* no body */ }
+  check('image upload stored (201)', upRes.status === 201 && /^\/api\/images\//.test(upData?.url || ''), JSON.stringify(upData))
+
+  if (upData?.url) {
+    const imgRes = await fetch(BASE + upData.url)
+    const type = imgRes.headers.get('content-type') || ''
+    check('uploaded image served from GridFS', imgRes.status === 200 && type.includes('image/png'), type)
+  }
 
   console.log(`\n${passed} passed, ${failed} failed`)
   await mongoose.disconnect()
