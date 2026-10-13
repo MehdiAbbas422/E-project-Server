@@ -173,7 +173,7 @@ router.delete('/:id', auth, allow('admin'), async (req, res) => {
 // GET /api/sessions/:id/bookings
 // Purpose: Admin-only attendee list for one session (who booked a seat).
 router.get('/:id/bookings', auth, allow('admin'), async (req, res) => {
-  res.json(await Booking.find({ session: req.params.id }).populate('user', 'name email'))
+  res.json(await Booking.find({ session: req.params.id }).populate({ path: 'user', select: 'name email' }))
 })
 
 // POST /api/sessions/:id/book

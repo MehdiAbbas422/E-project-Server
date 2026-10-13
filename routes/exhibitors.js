@@ -29,13 +29,13 @@ router.get('/', async (req, res) => {
   if (p) {
     return res.json(await paginatedResponse(
       Exhibitor, approvedQuery,
-      { sort: { createdAt: -1 }, populate: [['user', 'name email'], ['expo', 'title']] },
+      { sort: { createdAt: -1 }, populate: [{ path: 'user', select: 'name email' }, { path: 'expo', select: 'title' }] },
       p
     ))
   }
   res.json(await Exhibitor.find(approvedQuery)
-    .populate('user', 'name email')
-    .populate('expo', 'title'))
+    .populate({ path: 'user', select: 'name email' })
+    .populate({ path: 'expo', select: 'title' }))
 })
 
 // GET /api/exhibitors/me
@@ -49,7 +49,7 @@ router.get('/me', auth, allow('exhibitor'), async (req, res) => {
 // Purpose: Admin-only list of every exhibitor profile (any status) together
 // with its expo - used by the dashboard approval queue.
 router.get('/all', auth, allow('admin'), async (req, res) => {
-  res.json(await Exhibitor.find().populate('user', 'name email').populate('expo', 'title'))
+  res.json(await Exhibitor.find().populate({ path: 'user', select: 'name email' }).populate({ path: 'expo', select: 'title' }))
 })
 
 // POST /api/exhibitors

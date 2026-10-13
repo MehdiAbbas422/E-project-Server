@@ -47,8 +47,8 @@ router.get('/mine', auth, async (req, res) => {
 router.get('/received', auth, allow('exhibitor'), async (req, res) => {
   const profiles = await Exhibitor.find({ user: req.user.id }).distinct('_id')
   res.json(await Enquiry.find({ exhibitor: { $in: profiles } })
-    .populate('from', 'name email')
-    .populate('expo', 'title')
+    .populate({ path: 'from', select: 'name email' })
+    .populate({ path: 'expo', select: 'title' })
     .sort({ createdAt: -1 }))
 })
 
@@ -83,9 +83,9 @@ router.post('/:id/reply', auth, allow('exhibitor'), async (req, res) => {
 // Purpose: Admin-only overview of every enquiry in the system.
 router.get('/all', auth, allow('admin'), async (req, res) => {
   res.json(await Enquiry.find()
-    .populate('from', 'name email')
+    .populate({ path: 'from', select: 'name email' })
     .populate({ path: 'exhibitor', select: 'company' })
-    .populate('expo', 'title')
+    .populate({ path: 'expo', select: 'title' })
     .sort({ createdAt: -1 }))
 })
 

@@ -35,7 +35,7 @@ router.get('/', auth, allow('admin'), async (req, res) => {
       p
     ))
   }
-  res.json(await Feedback.find().populate('user', 'name email').sort({ createdAt: -1 }))
+  res.json(await Feedback.find().populate({ path: 'user', select: 'name email' }).sort({ createdAt: -1 }))
 })
 
 // PATCH /api/feedback/:id/reply

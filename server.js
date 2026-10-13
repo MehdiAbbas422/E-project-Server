@@ -8,6 +8,8 @@ const http = require('http')
 const path = require('path')
 const jwt = require('jsonwebtoken')
 const { Server } = require('socket.io')
+const mongoose = require('mongoose')
+mongoose.set('strictPopulate', false)
 const connectDB = require('./config/db')
 
 const app = express()
