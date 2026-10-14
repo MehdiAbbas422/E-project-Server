@@ -29,6 +29,25 @@ const check = (name, condition, extra = '') => {
   }
 }
 
+  const pastDate = new Date(Date.now() - 86400000).toISOString().slice(0, 10)
+  r = await api('POST', '/api/expos', {
+    token: adminTok,
+    body: { title: 'Past Expo', date: pastDate, location: 'Hall B' }
+  })
+  const pastExpoId = r.data._id
+  r = await api('POST', '/api/sessions', {
+    token: adminTok,
+    body: {
+      expo: pastExpoId, title: 'Past Expo Session', capacity: 5,
+      startTime: '2099-01-01T10:00:00.000Z', endTime: '2099-01-01T11:00:00.000Z'
+    }
+  })
+  const pastSessionId = r.data._id
+  r = await api('POST', `/api/sessions/${pastSessionId}/book`, { token: a1Tok })
+  check('booking rejected for past expo (400)', r.status === 400 && r.data.message === 'This expo has already passed')
+  r = await api('POST', `/api/sessions/${pastSessionId}/waitlist`, { token: a2Tok })
+  check('waitlist rejected for past expo (400)', r.status === 400 && r.data.message === 'This expo has already passed')
+
 // Purpose: Calls the API and returns { status, data } for easy assertions.
 const api = async (method, path, { token, body } = {}) => {
   const res = await fetch(BASE + path, {

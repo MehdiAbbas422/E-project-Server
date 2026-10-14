@@ -7,6 +7,13 @@ const { emitChange, notify } = require('../utils/notify')
 const { pick, escapeRegex } = require('../utils/validate')
 
 const SESSION_FIELDS = ['expo', 'title', 'speaker', 'topic', 'location', 'lat', 'lng', 'capacity', 'startTime', 'endTime']
+const isPastExpo = (date) => {
+  const expoDate = new Date(date)
+  const today = new Date()
+  expoDate.setUTCHours(0, 0, 0, 0)
+  today.setUTCHours(0, 0, 0, 0)
+  return expoDate < today
+}
 
 // Purpose: Builds a human friendly time slot used in notification text.
 const slot = (session) => `${new Date(session.startTime).toLocaleString()} – ${new Date(session.endTime).toLocaleTimeString()}`
@@ -186,6 +193,20 @@ router.post('/:id/book', auth, async (req, res) => {
   const existing = await Booking.findOne({ user: req.user.id, session: session._id })
   if (existing) return res.status(409).json({ message: 'You already booked this session' })
 
+  if (session.endTime && new Date(session.endTime) < new Date()) {
+    return res.status(400).json({ message: 'This session has already ended' })
+  }
+  if (session.startTime && new Date(session.startTime) < new Date()) {
+    // Allow booking only if not started? Or block past events - past expo sessions
+    // Better to block if ended; also block if expo is past? Check expo date
+  }
+
+  // Check if expo is past
+  const Expo = require('../models/Expo')
+  const expo = await Expo.findById(session.expo)
+  if (expo && isPastExpo(expo.date))
+    return res.status(400).json({ message: 'This expo has already passed' })
+
   if (session.capacity > 0) {
     const booked = await Booking.countDocuments({ session: session._id })
     if (booked >= session.capacity)
@@ -216,6 +237,15 @@ router.post('/:id/waitlist', auth, async (req, res) => {
 
   const alreadyBooked = await Booking.findOne({ user: req.user.id, session: session._id })
   if (alreadyBooked) return res.status(409).json({ message: 'You already booked this session' })
+
+  if (session.endTime && new Date(session.endTime) < new Date()) {
+    return res.status(400).json({ message: 'This session has already ended' })
+  }
+
+  const Expo = require('../models/Expo')
+  const expo = await Expo.findById(session.expo)
+  if (expo && isPastExpo(expo.date))
+    return res.status(400).json({ message: 'This expo has already passed' })
 
   if (!(session.capacity > 0))
     return res.status(400).json({ message: 'This session has no seat limit — just book it' })
