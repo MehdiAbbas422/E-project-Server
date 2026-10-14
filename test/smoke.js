@@ -29,25 +29,6 @@ const check = (name, condition, extra = '') => {
   }
 }
 
-  const pastDate = new Date(Date.now() - 86400000).toISOString().slice(0, 10)
-  r = await api('POST', '/api/expos', {
-    token: adminTok,
-    body: { title: 'Past Expo', date: pastDate, location: 'Hall B' }
-  })
-  const pastExpoId = r.data._id
-  r = await api('POST', '/api/sessions', {
-    token: adminTok,
-    body: {
-      expo: pastExpoId, title: 'Past Expo Session', capacity: 5,
-      startTime: '2099-01-01T10:00:00.000Z', endTime: '2099-01-01T11:00:00.000Z'
-    }
-  })
-  const pastSessionId = r.data._id
-  r = await api('POST', `/api/sessions/${pastSessionId}/book`, { token: a1Tok })
-  check('booking rejected for past expo (400)', r.status === 400 && r.data.message === 'This expo has already passed')
-  r = await api('POST', `/api/sessions/${pastSessionId}/waitlist`, { token: a2Tok })
-  check('waitlist rejected for past expo (400)', r.status === 400 && r.data.message === 'This expo has already passed')
-
 // Purpose: Calls the API and returns { status, data } for easy assertions.
 const api = async (method, path, { token, body } = {}) => {
   const res = await fetch(BASE + path, {
@@ -82,10 +63,12 @@ const main = async () => {
   const admin = await User.create({ name: 'Admin', email: 'admin@test.com', password: hash, role: 'admin', isVerified: true })
   const a1 = await User.create({ name: 'Attendee One', email: 'a1@test.com', password: hash, role: 'attendee', isVerified: true })
   const a2 = await User.create({ name: 'Attendee Two', email: 'a2@test.com', password: hash, role: 'attendee', isVerified: true })
+  const exhibitor = await User.create({ name: 'Exhibitor', email: 'exhibitor@test.com', password: hash, role: 'exhibitor', isVerified: true })
   const sign = (u) => jwt.sign({ id: u._id, role: u.role, name: u.name }, process.env.JWT_SECRET, { expiresIn: '1h' })
   const adminTok = sign(admin)
   const a1Tok = sign(a1)
   const a2Tok = sign(a2)
+  const exhibitorTok = sign(exhibitor)
 
   console.log('\nHealth & expos')
   let r = await api('GET', '/api/health')
@@ -106,6 +89,33 @@ const main = async () => {
 
   r = await api('GET', '/api/exhibitors')
   check('exhibitors plain array without page', r.status === 200 && Array.isArray(r.data))
+
+  const pastDate = new Date(Date.now() - 86400000).toISOString().slice(0, 10)
+  r = await api('POST', '/api/expos', {
+    token: adminTok,
+    body: { title: 'Past Expo', date: pastDate, location: 'Hall B' }
+  })
+  const pastExpoId = r.data._id
+  const pastExpoSession = await api('POST', '/api/sessions', {
+    token: adminTok,
+    body: {
+      expo: pastExpoId, title: 'Past Expo Session', capacity: 5,
+      startTime: '2099-01-01T10:00:00.000Z', endTime: '2099-01-01T11:00:00.000Z'
+    }
+  })
+  r = await api('POST', `/api/sessions/${pastExpoSession.data._id}/book`, { token: a1Tok })
+  check('booking rejected for past expo (400)', r.status === 400 && r.data.message === 'This expo has already passed')
+  r = await api('POST', `/api/sessions/${pastExpoSession.data._id}/waitlist`, { token: a2Tok })
+  check('waitlist rejected for past expo (400)', r.status === 400 && r.data.message === 'This expo has already passed')
+
+  const Exhibitor = require('../models/Exhibitor')
+  await Exhibitor.create({ user: exhibitor._id, expo: pastExpoId, company: 'Past Expo Co', status: 'approved' })
+  const pastBooth = await api('POST', '/api/booths', {
+    token: adminTok,
+    body: { expo: pastExpoId, number: 'P-1' }
+  })
+  r = await api('POST', `/api/booths/${pastBooth.data._id}/reserve`, { token: exhibitorTok })
+  check('booth reservation rejected for past expo (400)', r.status === 400 && r.data.message === 'This expo has already passed')
 
   console.log('\nSessions, conflicts & capacity')
   r = await api('POST', '/api/sessions', {

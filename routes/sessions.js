@@ -5,15 +5,9 @@ const Waitlist = require('../models/Waitlist')
 const { auth, allow } = require('../middleware/auth')
 const { emitChange, notify } = require('../utils/notify')
 const { pick, escapeRegex } = require('../utils/validate')
+const { isPastExpoDate } = require('../utils/dates')
 
 const SESSION_FIELDS = ['expo', 'title', 'speaker', 'topic', 'location', 'lat', 'lng', 'capacity', 'startTime', 'endTime']
-const isPastExpo = (date) => {
-  const expoDate = new Date(date)
-  const today = new Date()
-  expoDate.setUTCHours(0, 0, 0, 0)
-  today.setUTCHours(0, 0, 0, 0)
-  return expoDate < today
-}
 
 // Purpose: Builds a human friendly time slot used in notification text.
 const slot = (session) => `${new Date(session.startTime).toLocaleString()} – ${new Date(session.endTime).toLocaleTimeString()}`
@@ -204,7 +198,7 @@ router.post('/:id/book', auth, async (req, res) => {
   // Check if expo is past
   const Expo = require('../models/Expo')
   const expo = await Expo.findById(session.expo)
-  if (expo && isPastExpo(expo.date))
+  if (expo && isPastExpoDate(expo.date))
     return res.status(400).json({ message: 'This expo has already passed' })
 
   if (session.capacity > 0) {
@@ -244,7 +238,7 @@ router.post('/:id/waitlist', auth, async (req, res) => {
 
   const Expo = require('../models/Expo')
   const expo = await Expo.findById(session.expo)
-  if (expo && isPastExpo(expo.date))
+  if (expo && isPastExpoDate(expo.date))
     return res.status(400).json({ message: 'This expo has already passed' })
 
   if (!(session.capacity > 0))

@@ -1,9 +1,11 @@
 const router = require('express').Router()
 const Booth = require('../models/Booth')
 const Exhibitor = require('../models/Exhibitor')
+const Expo = require('../models/Expo')
 const { auth, allow } = require('../middleware/auth')
 const { emitChange, notify } = require('../utils/notify')
 const { pick } = require('../utils/validate')
+const { isPastExpoDate } = require('../utils/dates')
 
 const BOOTH_FIELDS = ['number', 'size', 'status', 'expo']
 
@@ -41,6 +43,10 @@ router.put('/:id', auth, allow('admin'), async (req, res) => {
 router.post('/:id/reserve', auth, allow('exhibitor'), async (req, res) => {
   const booth = await Booth.findById(req.params.id)
   if (!booth) return res.status(404).json({ message: 'Booth not found' })
+
+  const expo = await Expo.findById(booth.expo)
+  if (expo && isPastExpoDate(expo.date))
+    return res.status(400).json({ message: 'This expo has already passed' })
 
   const approved = await Exhibitor.findOne({
     user: req.user.id,
