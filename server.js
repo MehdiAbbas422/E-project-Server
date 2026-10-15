@@ -42,6 +42,11 @@ app.use(cors({ origin: allowedOrigins }))
 // Security headers. crossOriginResourcePolicy is relaxed so uploaded images
 // can still be embedded by the client.
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }))
+
+// Stripe webhook — must be mounted BEFORE express.json() so Stripe can verify
+// the raw request body signature.
+app.use('/api/payments', require('./routes/payments'))
+
 // Larger JSON body limit so image metadata can travel with form payloads
 app.use(express.json({ limit: '2mb' }))
 
@@ -99,6 +104,7 @@ app.use('/api/announcements', require('./routes/announcements'))
 app.use('/api/enquiries', require('./routes/enquiries'))
 app.use('/api/favourites', require('./routes/favourites'))
 app.use('/api/admin', require('./routes/admin'))
+app.use('/api/payments', require('./routes/payment-intents'))
 
 // Purpose: Root health probe so platform health checks (Koyeb, Render, etc.)
 // get a fast 200 response without hitting a real route.

@@ -8,7 +8,9 @@ const exhibitorSchema = new mongoose.Schema({
   products: { type: String, default: '' },
   logo: { type: String, default: '' },
   contact: { type: String, default: '' },
-  status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' }
+  status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
+  paymentStatus: { type: String, enum: ['unpaid', 'paid', 'failed'], default: 'unpaid' },
+  paymentId: { type: String, default: '' }
 }, { timestamps: true })
 
 exhibitorSchema.index({ user: 1, expo: 1 }, { unique: true })

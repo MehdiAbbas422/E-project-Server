@@ -12,6 +12,7 @@ const expoSchema = new mongoose.Schema({
   image: { type: String, default: '' },
   description: { type: String, default: '' },
   theme: { type: String, default: '' },
+  registrationFee: { type: Number, default: 0 },
   organizer: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
 }, { timestamps: true })
 
