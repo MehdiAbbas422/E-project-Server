@@ -22,6 +22,8 @@ router.post('/', auth, allow('admin'), async (req, res) => {
   const data = pick(req.body, BOOTH_FIELDS)
   if (!data.expo || !data.number)
     return res.status(400).json({ message: 'Expo and booth number are required' })
+  if (!data.price || data.price <= 0)
+    return res.status(400).json({ message: 'Booth price must be greater than 0' })
   const booth = await Booth.create(data)
   emitChange(req.app.get('io'), 'booths', { expoId: String(booth.expo) })
   res.status(201).json(booth)
@@ -29,9 +31,12 @@ router.post('/', auth, allow('admin'), async (req, res) => {
 
 // PUT /api/booths/:id
 // Purpose: Admin-only route that edits an existing booth (number, size,
-// status, ...).
+// status, price, ...).
 router.put('/:id', auth, allow('admin'), async (req, res) => {
-  const booth = await Booth.findByIdAndUpdate(req.params.id, pick(req.body, BOOTH_FIELDS), { new: true })
+  const data = pick(req.body, BOOTH_FIELDS)
+  if (data.price !== undefined && (!data.price || data.price <= 0))
+    return res.status(400).json({ message: 'Booth price must be greater than 0' })
+  const booth = await Booth.findByIdAndUpdate(req.params.id, data, { new: true })
   if (!booth) return res.status(404).json({ message: 'Booth not found' })
   emitChange(req.app.get('io'), 'booths', { expoId: String(booth.expo) })
   res.json(booth)
