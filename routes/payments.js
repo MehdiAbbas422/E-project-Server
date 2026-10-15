@@ -3,6 +3,14 @@ const { auth, allow } = require('../middleware/auth')
 const { emitChange, notify } = require('../utils/notify')
 const { sendMail } = require('../config/mailer')
 
+// Publish only Stripe's public key; the secret key must remain server-side.
+router.get('/config', (req, res) => {
+  const publishableKey = process.env.STRIPE_PUBLISHABLE_KEY || process.env.VITE_STRIPE_PUBLISHABLE_KEY
+  if (!publishableKey)
+    return res.status(503).json({ message: 'Stripe publishable key is not configured on the server' })
+  res.json({ publishableKey })
+})
+
 // POST /api/payments/webhook
 // Purpose: Stripe webhook endpoint that listens for payment success/failure
 // events and updates the exhibitor profile status accordingly.

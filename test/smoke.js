@@ -8,6 +8,7 @@
 process.env.JWT_SECRET = process.env.JWT_SECRET || 'smoke-test-secret'
 process.env.PORT = process.env.PORT || '5099'
 process.env.CLIENT_URL = '*'
+process.env.STRIPE_PUBLISHABLE_KEY = 'pk_test_smoke'
 
 const { MongoMemoryServer } = require('mongodb-memory-server')
 const mongoose = require('mongoose')
@@ -73,6 +74,9 @@ const main = async () => {
   console.log('\nHealth & expos')
   let r = await api('GET', '/api/health')
   check('health probe', r.status === 200 && r.data.ok === true)
+
+  r = await api('GET', '/api/payments/config')
+  check('Stripe config exposes only publishable key', r.status === 200 && r.data.publishableKey === 'pk_test_smoke' && !r.data.secretKey)
 
   r = await api('POST', '/api/expos', {
     token: adminTok,
