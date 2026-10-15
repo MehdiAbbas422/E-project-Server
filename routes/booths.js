@@ -57,14 +57,6 @@ router.post('/:id/reserve', auth, allow('exhibitor'), async (req, res) => {
   if (!approved)
     return res.status(403).json({ message: 'You Have Not This Expo Approved Account' })
 
-  const existingReservation = await Booth.findOne({
-    expo: booth.expo,
-    exhibitor: req.user.id,
-    status: 'reserved'
-  })
-  if (existingReservation)
-    return res.status(409).json({ message: 'You already reserved one slot' })
-
   if (booth.status !== 'available')
     return res.status(400).json({ message: 'Booth not available' })
 
@@ -129,21 +121,6 @@ router.post('/:id/payment-intent', auth, allow('exhibitor'), async (req, res) =>
     console.error('Stripe PaymentIntent error:', err.message)
     res.status(500).json({ message: 'Payment initialization failed' })
   }
-})
-
-// DELETE /api/booths/:id/reserve
-// Purpose: Lets the reserving exhibitor remove their own booth reservation.
-router.delete('/:id/reserve', auth, allow('exhibitor'), async (req, res) => {
-  const booth = await Booth.findById(req.params.id)
-  if (!booth) return res.status(404).json({ message: 'Booth not found' })
-  if (booth.exhibitor?.toString() !== req.user.id)
-    return res.status(403).json({ message: 'You did not reserve this booth' })
-
-  booth.status = 'available'
-  booth.exhibitor = null
-  await booth.save()
-  emitChange(req.app.get('io'), 'booths', { expoId: String(booth.expo) })
-  res.json({ message: 'Reservation removed successfully', booth })
 })
 
 // DELETE /api/booths/:id
