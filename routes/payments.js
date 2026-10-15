@@ -1,5 +1,4 @@
 const router = require('express').Router()
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
 const { auth, allow } = require('../middleware/auth')
 const { emitChange, notify } = require('../utils/notify')
 const { sendMail } = require('../config/mailer')
@@ -10,10 +9,14 @@ const { sendMail } = require('../config/mailer')
 // NOTE: This route is mounted BEFORE express.json() in server.js so that
 //       Stripe can verify the raw request signature.
 router.post('/webhook', async (req, res) => {
+  if (!process.env.STRIPE_SECRET_KEY || !process.env.STRIPE_WEBHOOK_SECRET)
+    return res.status(503).json({ message: 'Stripe webhook is not configured on the server' })
+
   const sig = req.headers['stripe-signature']
   let event
 
   try {
+    const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
     event = stripe.webhooks.constructEvent(
       req.body,
       sig,

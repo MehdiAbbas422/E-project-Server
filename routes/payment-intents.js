@@ -1,5 +1,4 @@
 const router = require('express').Router()
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
 const { auth, allow } = require('../middleware/auth')
 
 // POST /api/payments/create-intent
@@ -11,8 +10,11 @@ router.post('/create-intent', auth, allow('exhibitor'), async (req, res) => {
 
   if (!expoId || !amount || amount <= 0)
     return res.status(400).json({ message: 'Valid expoId and positive amount are required' })
+  if (!process.env.STRIPE_SECRET_KEY)
+    return res.status(503).json({ message: 'Stripe payments are not configured on the server' })
 
   try {
+    const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
     const paymentIntent = await stripe.paymentIntents.create({
       amount: Math.round(amount * 100),
       currency: 'inr',

@@ -72,10 +72,12 @@ router.post('/:id/reserve', auth, allow('exhibitor'), async (req, res) => {
     const { paymentId } = req.body
     if (!paymentId)
       return res.status(402).json({ message: 'Payment required', amount: booth.price, boothId: booth._id.toString() })
+    if (!process.env.STRIPE_SECRET_KEY)
+      return res.status(503).json({ message: 'Stripe payments are not configured on the server' })
 
     // Verify payment was successful
-    const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
     try {
+      const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
       const paymentIntent = await stripe.paymentIntents.retrieve(paymentId)
       if (paymentIntent.status !== 'succeeded')
         return res.status(402).json({ message: 'Payment not completed', amount: booth.price, boothId: booth._id.toString() })
@@ -114,6 +116,8 @@ router.post('/:id/payment-intent', auth, allow('exhibitor'), async (req, res) =>
   if (!booth) return res.status(404).json({ message: 'Booth not found' })
   if (booth.price <= 0)
     return res.status(400).json({ message: 'This booth does not require payment' })
+  if (!process.env.STRIPE_SECRET_KEY)
+    return res.status(503).json({ message: 'Stripe payments are not configured on the server' })
 
   try {
     const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
