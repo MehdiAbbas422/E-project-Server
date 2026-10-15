@@ -7,7 +7,7 @@ const { emitChange, notify } = require('../utils/notify')
 const { pick } = require('../utils/validate')
 const { isPastExpoDate } = require('../utils/dates')
 
-const BOOTH_FIELDS = ['number', 'size', 'status', 'expo']
+const BOOTH_FIELDS = ['number', 'size', 'status', 'price', 'expo']
 
 // GET /api/booths/expo/:expoId
 // Purpose: Public floor-plan data - lists every booth of one expo with the
@@ -22,8 +22,9 @@ router.post('/', auth, allow('admin'), async (req, res) => {
   const data = pick(req.body, BOOTH_FIELDS)
   if (!data.expo || !data.number)
     return res.status(400).json({ message: 'Expo and booth number are required' })
-  if (!data.price || data.price <= 0)
-    return res.status(400).json({ message: 'Booth price must be greater than 0' })
+  if (data.price !== undefined && (!Number.isFinite(Number(data.price)) || Number(data.price) < 0))
+    return res.status(400).json({ message: 'Booth price must be 0 or greater' })
+  if (data.price !== undefined) data.price = Number(data.price)
   const booth = await Booth.create(data)
   emitChange(req.app.get('io'), 'booths', { expoId: String(booth.expo) })
   res.status(201).json(booth)
@@ -34,8 +35,9 @@ router.post('/', auth, allow('admin'), async (req, res) => {
 // status, price, ...).
 router.put('/:id', auth, allow('admin'), async (req, res) => {
   const data = pick(req.body, BOOTH_FIELDS)
-  if (data.price !== undefined && (!data.price || data.price <= 0))
-    return res.status(400).json({ message: 'Booth price must be greater than 0' })
+  if (data.price !== undefined && (!Number.isFinite(Number(data.price)) || Number(data.price) < 0))
+    return res.status(400).json({ message: 'Booth price must be 0 or greater' })
+  if (data.price !== undefined) data.price = Number(data.price)
   const booth = await Booth.findByIdAndUpdate(req.params.id, data, { new: true })
   if (!booth) return res.status(404).json({ message: 'Booth not found' })
   emitChange(req.app.get('io'), 'booths', { expoId: String(booth.expo) })

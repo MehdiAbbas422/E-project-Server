@@ -84,6 +84,17 @@ const main = async () => {
   r = await api('GET', '/api/expos?page=1&limit=9')
   check('expos paginated shape', r.status === 200 && Array.isArray(r.data.items) && r.data.items.length === 1 && typeof r.data.pages === 'number')
 
+  r = await api('POST', '/api/booths', {
+    token: adminTok,
+    body: { expo: expoId, number: 'A-1', price: 500 }
+  })
+  check('admin creates paid booth (201)', r.status === 201 && r.data.price === 500, JSON.stringify(r.data))
+  r = await api('POST', '/api/booths', {
+    token: adminTok,
+    body: { expo: expoId, number: 'A-2', price: 0 }
+  })
+  check('admin creates free booth (201)', r.status === 201 && r.data.price === 0, JSON.stringify(r.data))
+
   r = await api('GET', '/api/exhibitors?page=1&limit=9')
   check('exhibitors paginated shape', r.status === 200 && Array.isArray(r.data.items) && typeof r.data.pages === 'number')
 
