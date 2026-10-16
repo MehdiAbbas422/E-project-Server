@@ -105,6 +105,7 @@ app.use('/api/enquiries', require('./routes/enquiries'))
 app.use('/api/favourites', require('./routes/favourites'))
 app.use('/api/admin', require('./routes/admin'))
 app.use('/api/payments', require('./routes/payment-intents'))
+app.use('/api/analytics', require('./routes/analytics'))
 
 // Purpose: Root health probe so platform health checks (Koyeb, Render, etc.)
 // get a fast 200 response without hitting a real route.
