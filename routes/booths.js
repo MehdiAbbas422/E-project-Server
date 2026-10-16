@@ -123,7 +123,7 @@ router.post('/:id/payment-intent', auth, allow('exhibitor'), async (req, res) =>
     const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
     const paymentIntent = await stripe.paymentIntents.create({
       amount: Math.round(booth.price * 100),
-      currency: 'inr',
+      currency: 'pkr',
       automatic_payment_methods: { enabled: true },
       metadata: { boothId: booth._id.toString(), userId: req.user.id, expoId: String(booth.expo) }
     })
