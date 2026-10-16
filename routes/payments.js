@@ -69,7 +69,7 @@ router.post('/webhook', async (req, res) => {
             await sendMail({
               to: user.email,
               subject: 'EventSphere - Exhibitor Registration Confirmed',
-              html: `<p>Your payment of <b>₹${(paymentIntent.amount / 100).toFixed(2)}</b> for <b>${expo?.title || 'the expo'}</b> was successful. Your exhibitor registration is now <b>approved</b>.</p>`
+              html: `<p>Your payment of <b>PKR ${(paymentIntent.amount / 100).toFixed(2)}</b> for <b>${expo?.title || 'the expo'}</b> was successful. Your exhibitor registration is now <b>approved</b>.</p>`
             })
           }
         } catch (mailErr) {
